@@ -22,7 +22,8 @@ pipeline {
     stages {
         stage('Cloning Git') {
           steps {
-            git 'https://github.com/fakchich/semtech-test.git'
+            git branch: 'main',
+                                url:  'https://github.com/fakchich/semtech-test'
           }
         }
 
@@ -51,26 +52,24 @@ pipeline {
         }
         stage('Docker Build') {
             steps {
-                script {
-                    docker.build("$REGISTRY:${TAG}")
-                }
+                sh 'docker build -t afakchich/semtech-test:latest .'
             }
         }
 	    stage('Pushing Docker Image to Dockerhub') {
             steps {
                 script {
                     docker.withRegistry('https://registry.hub.docker.com', 'docker_credential') {
-                        docker.image("$REGISTRY:${TAG}").push()
-                        docker.image("$REGISTRY:${TAG}").push("latest")
+                        docker.image("${REGISTRY}:${TAG}").push()
+                        docker.image("${REGISTRY}:${TAG}").push("latest")
                     }
                 }
             }
         }
         stage('Deploy'){
             steps {
-                sh "docker stop $DOCKER_IMAGE | true"
-                sh "docker rm $DOCKER_IMAGE | true"
-                sh "docker run --name $DOCKER_IMAGE -t $REGISTRY:${TAG}"
+                sh "docker stop ${DOCKER_IMAGE} | true"
+                sh "docker rm ${DOCKER_IMAGE} | true"
+                sh "docker run --name ${DOCKER_IMAGE} -t ${REGISTRY}:${TAG}"
             }
         }
 
@@ -90,7 +89,7 @@ pipeline {
 
         stage('Remove Unused docker image') {
               steps{
-                sh "docker rmi $registry:$BUILD_NUMBER"
+                sh "docker rmi ${REGISTRY}:$BUILD_NUMBER"
               }
         }
     }
